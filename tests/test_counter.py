@@ -1,8 +1,6 @@
 """Счётчик ингредиента при добавлении в заказ."""
 import allure
 
-from utils.expect import expect
-
 
 @allure.feature("Счётчик ингредиента")
 class TestIngredientCounter:
@@ -16,11 +14,12 @@ class TestIngredientCounter:
         первый, и счётчик остаётся равным единице.
         """
         page = main_page.open().wait_opened()
-        index = page.FILLING
+        before = page.ingredient_counter(page.FILLING)
 
-        before = page.ingredient_counter(index)
-        page.add_ingredient(index)
-        page.wait_counter(index, before + 1)
+        page.add_ingredient(page.FILLING)
+        page.wait_counter(page.FILLING, before + 1)
 
-        expect(page.ingredient_counter(index),
-               "счётчик ингредиента").to_equal(before + 1)
+        after = page.ingredient_counter(page.FILLING)
+        assert after == before + 1, (
+            f"счётчик ингредиента #{page.FILLING}: было {before}, стало {after}"
+        )
