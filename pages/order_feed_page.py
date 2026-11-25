@@ -1,4 +1,4 @@
-"""Page Object «Лента заказов»."""
+"""Page Object «Ленты заказов»."""
 from __future__ import annotations
 
 from functools import partial
@@ -17,8 +17,8 @@ class OrderFeedPage(BasePage):
     """Счётчики выполненных заказов и блок «В работе»."""
 
     def open(self) -> "OrderFeedPage":
-        """Открывает /feed и ждёт, пока отрисуются счётчики."""
-        self.driver.get(FEED_URL)
+        """Открывает ленту заказов."""
+        self.open_url(FEED_URL)
         return self
 
     def wait_opened(self) -> "OrderFeedPage":
@@ -37,10 +37,10 @@ class OrderFeedPage(BasePage):
 
     def _value(self, locator: tuple[str, str], pattern: str) -> int | None:
         """Значение счётчика: XPath -> JS по подписи -> текст страницы."""
-        for element in self.driver.find_elements(*locator):
-            text = element.text.strip()
-            if text.isdigit() or (text and text.replace(" ", "").isdigit()):
-                return int(text.replace(" ", ""))
+        for element in self.find_all(locator):
+            text = element.text.strip().replace(" ", "")
+            if text.isdigit():
+                return int(text)
         value = self.dom.counter(pattern)
         if value is not None:
             return value
@@ -98,8 +98,8 @@ class OrderFeedPage(BasePage):
         """Номера заказов в блоке «В работе» (без ведущих нулей)."""
         numbers = [
             int(text.replace(" ", ""))
-            for element in self.driver.find_elements(
-                *OrderFeedLocators.IN_PROGRESS_ITEMS)
+            for element in self.find_all(
+                OrderFeedLocators.IN_PROGRESS_ITEMS)
             for text in [element.text.strip()]
             if text.replace(" ", "").isdigit()
         ]
