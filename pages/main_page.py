@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import allure
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.keys import Keys
 
 from config.config import BASE_URL, FEED_URL
 from locators.main_page_locators import MainPageLocators
@@ -18,8 +17,13 @@ class MainPage(BasePage):
     FILLING = 2
 
     def open(self) -> "MainPage":
-        """Открывает главную и ждёт загрузки конструктора."""
-        self.driver.get(BASE_URL)
+        """Открывает главную страницу."""
+        self.open_url(BASE_URL)
+        return self
+
+    def open_feed(self) -> "MainPage":
+        """Открывает ленту заказов напрямую по URL."""
+        self.open_url(FEED_URL)
         return self
 
     def wait_opened(self) -> "MainPage":
@@ -28,11 +32,6 @@ class MainPage(BasePage):
             lambda _: self.is_opened(),
             message="конструктор не загрузился",
         )
-        return self
-
-    def open_feed(self) -> "MainPage":
-        """Открывает ленту заказов напрямую по URL."""
-        self.driver.get(FEED_URL)
         return self
 
     def is_opened(self) -> bool:
@@ -84,7 +83,7 @@ class MainPage(BasePage):
             MainPageLocators.MODAL_CLOSE_FALLBACK,
         )
         if not closed:
-            self.driver.find_element("tag name", "body").send_keys(Keys.ESCAPE)
+            self.press_escape()
         self.wait_invisible(MainPageLocators.MODAL_CONTENT)
 
     # --- корзина ----------------------------------------------------------
@@ -97,7 +96,7 @@ class MainPage(BasePage):
         """
         card = self.card(index)
         basket = self.find_visible(MainPageLocators.CONSTRUCTOR_BASKET)
-        drag_and_drop(self.driver, card, basket)
+        drag_and_drop(self, card, basket)
 
     def ingredient_counter(self, index: int = FILLING) -> int:
         """Счётчик ингредиента внутри его карточки (0, если не добавлен).
