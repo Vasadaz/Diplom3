@@ -2,9 +2,6 @@
 import allure
 
 from config.config import BASE_URL
-from pages.main_page import MainPage
-from pages.order_feed_page import OrderFeedPage
-from utils.expect import expect
 
 
 @allure.feature("Навигация")
@@ -12,21 +9,25 @@ class TestNavigation:
     """Переключение основных разделов шапки."""
 
     @allure.title("Переход по клику на «Конструктор»")
-    def test_open_constructor(self, driver):
+    def test_open_constructor(self, guest_page):
         """С /feed клик по «Конструктор» возвращает на главную."""
-        main = MainPage(driver)
-        main.open_feed()
-        main.click_constructor()
+        guest_page.open_feed()
+        guest_page.click_constructor()
+        guest_page.wait_opened()
 
-        expect(main.wait_opened().is_opened(), "конструктор").to_be_truthy()
-        expect(driver.current_url.rstrip("/"), "URL после перехода") \
-            .to_equal(BASE_URL)
+        assert guest_page.is_opened(), "конструктор не отрисовался"
+        assert guest_page.current_url.rstrip("/") == BASE_URL, (
+            f"открылся {guest_page.current_url}"
+        )
 
     @allure.title("Переход по клику на «Лента заказов»")
-    def test_open_order_feed(self, driver):
+    def test_open_order_feed(self, guest_page, guest_feed):
         """Клик по «Лента Заказов» открывает /feed со счётчиками."""
-        MainPage(driver).open().wait_opened().click_order_feed()
+        guest_page.open().wait_opened()
+        guest_page.click_order_feed()
+        guest_feed.wait_opened()
 
-        feed = OrderFeedPage(driver).wait_opened()
-        expect(driver.current_url, "URL после перехода").to_contain("/feed")
-        expect(feed.is_opened(), "счётчики ленты").to_be_truthy()
+        assert "/feed" in guest_feed.current_url, (
+            f"открылся {guest_feed.current_url}"
+        )
+        assert guest_feed.is_opened(), "счётчики ленты не отрисовались"
