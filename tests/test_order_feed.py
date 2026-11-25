@@ -1,8 +1,6 @@
 """Счётчики ленты заказов и блок «В работе»."""
 import allure
 
-from utils.expect import expect
-
 
 @allure.feature("Лента заказов")
 class TestOrderFeed:
@@ -11,28 +9,30 @@ class TestOrderFeed:
     @allure.title("«Выполнено за всё время» растёт после создания заказа")
     def test_total_done_grows(self, main_page, order_feed_page):
         """Счётчик за всё время становится больше baseline."""
-        feed = order_feed_page.open().wait_opened()
-        baseline = feed.total_done()
+        baseline = order_feed_page.open().wait_opened().total_done()
 
         main_page.open().wait_opened().build_burger()
         main_page.place_order(close_modal=False)
 
-        feed.open().wait_opened()
-        expect(feed.wait_total_done_grows(baseline),
-               "счётчик «Выполнено за всё время»").to_be_greater(baseline)
+        order_feed_page.open().wait_opened()
+        actual = order_feed_page.wait_total_done_grows(baseline)
+        assert actual > baseline, (
+            f"«Выполнено за всё время»: было {baseline}, стало {actual}"
+        )
 
     @allure.title("«Выполнено за сегодня» растёт после создания заказа")
     def test_today_done_grows(self, main_page, order_feed_page):
         """Счётчик за сегодня становится больше baseline."""
-        feed = order_feed_page.open().wait_opened()
-        baseline = feed.today_done()
+        baseline = order_feed_page.open().wait_opened().today_done()
 
         main_page.open().wait_opened().build_burger()
         main_page.place_order(close_modal=False)
 
-        feed.open().wait_opened()
-        expect(feed.wait_today_done_grows(baseline),
-               "счётчик «Выполнено за сегодня»").to_be_greater(baseline)
+        order_feed_page.open().wait_opened()
+        actual = order_feed_page.wait_today_done_grows(baseline)
+        assert actual > baseline, (
+            f"«Выполнено за сегодня»: было {baseline}, стало {actual}"
+        )
 
     @allure.title("Номер заказа появляется в «В работе»")
     def test_order_number_in_progress(self, main_page, order_feed_page):
@@ -40,7 +40,9 @@ class TestOrderFeed:
         main_page.open().wait_opened().build_burger()
         number = main_page.place_order(close_modal=False)
 
-        feed = order_feed_page.open().wait_opened()
-        expect(number, "номер заказа").to_be_greater(0)
-        expect(feed.wait_order_in_progress(number),
-               "заказ в «В работе»").to_be_truthy()
+        order_feed_page.open().wait_opened()
+        in_progress = order_feed_page.wait_order_in_progress(number)
+        assert in_progress, (
+            f"номер {number} не появился в «В работе»: "
+            f"{order_feed_page.orders_in_progress()}"
+        )
