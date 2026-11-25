@@ -1,8 +1,8 @@
 """Фикстуры: браузер на сессию, пользователь через API, вход через UI.
 
 Браузер поднимается один раз на всю сессию, состояние сбрасывается перед
-каждым тестом (`driver`). Так прогон не платит за старт браузера 16 раз,
-а изоляция тестов сохраняется.
+каждым тестом. Так прогон не платит за старт драйвера 16 раз, а изоляция
+тестов сохраняется.
 """
 import allure
 import pytest
@@ -11,8 +11,8 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 
 from api.user_api import UserApi
-from config.config import BASE_URL
 from data.test_data import generate_user
+from pages.base_page import BasePage
 from pages.login_page import LoginPage
 from pages.main_page import MainPage
 from pages.order_feed_page import OrderFeedPage
@@ -39,11 +39,12 @@ def pytest_runtest_makereport(item, call):
     if driver is None:
         return
 
+    page = BasePage(driver)
     with allure.step("Состояние страницы на момент падения"):
-        allure.attach(driver.get_screenshot_as_png(), "screenshot",
+        allure.attach(page.screenshot(), "screenshot",
                       allure.attachment_type.PNG)
-        allure.attach(driver.current_url, "url", allure.attachment_type.TEXT)
-        allure.attach(driver.page_source, "page_source",
+        allure.attach(page.current_url, "url", allure.attachment_type.TEXT)
+        allure.attach(page.page_source, "page_source",
                       allure.attachment_type.HTML)
 
 
@@ -85,10 +86,7 @@ def _browser(request: pytest.FixtureRequest):
 @pytest.fixture
 def driver(_browser):
     """Чистое состояние браузера перед каждым тестом."""
-    _browser.get(BASE_URL)
-    _browser.execute_script(
-        "window.localStorage.clear(); window.sessionStorage.clear();")
-    _browser.delete_all_cookies()
+    BasePage(_browser).reset_state()
     return _browser
 
 
@@ -113,6 +111,18 @@ def authorized_driver(driver, user_api: UserApi):
     user = user_api.user
     LoginPage(driver).open().login(user["email"], user["password"])
     return driver
+
+
+@pytest.fixture
+def guest_page(driver) -> MainPage:
+    """MainPage без авторизации — для проверок навигации."""
+    return MainPage(driver)
+
+
+@pytest.fixture
+def guest_feed(driver) -> OrderFeedPage:
+    """OrderFeedPage без авторизации — для проверок навигации."""
+    return OrderFeedPage(driver)
 
 
 @pytest.fixture
