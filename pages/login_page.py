@@ -15,7 +15,7 @@ class LoginPage(BasePage):
 
     def open(self) -> "LoginPage":
         """Открывает форму входа."""
-        self.driver.get(LOGIN_URL)
+        self.open_url(LOGIN_URL)
         self.find_visible(LoginPageLocators.EMAIL_INPUT)
         return self
 
