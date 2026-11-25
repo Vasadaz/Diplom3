@@ -104,7 +104,6 @@ pytest -n 2 -v
     ├── dom.py                   чтение значений из DOM (фасад над JS)
     ├── js_scripts.py            JS-скрипты
     ├── dragdrop.py              HTML5 drag&drop
-    ├── expect.py                утверждения с предметными сообщениями
     └── numbers.py               приведение чисел интерфейса к int
 ```
 
@@ -135,8 +134,11 @@ pytest -n 2 -v
 tests/  →  pages/  →  locators/ + utils/dom.py  →  DOM
 ```
 
-* **tests** знают только про Page Object. Локаторов и `driver.find_element` в тестах нет.
+* **tests** знают только про Page Object. Локаторов и `driver` в тестах нет вообще.
 * **pages** возвращают значения (`int` номер заказа, `str` название, `bool`), а не `WebElement`.
+* **pages/base_page.py** — единственное место, где живёт `WebDriver`. Навигация, JS,
+  клавиатура и чтение состояния доступны страницам по наследованию: `open_url()`,
+  `execute_script()`, `press_escape()`, `current_url`, `body_text()`.
 * **utils/dom.py** — единственное место, где значения читаются из DOM через JS.
 
 ### Page Object
@@ -147,7 +149,9 @@ def test_order_number_in_progress(self, main_page, order_feed_page):
     number = main_page.place_order(close_modal=False)
 
     feed = order_feed_page.open().wait_opened()
-    expect(feed.wait_order_in_progress(number), "заказ в «В работе»").to_be_truthy()
+    assert feed.wait_order_in_progress(number), (
+        f"номер {number} не появился в «В работе»"
+    )
 ```
 
 ### Ожидания
@@ -156,15 +160,16 @@ def test_order_number_in_progress(self, main_page, order_feed_page):
 поверх `WebDriverWait` с частотой опроса `POLL_FREQUENCY`. У каждого ожидания есть
 сообщение — при падении видно, чего именно не дождались.
 
-### Утверждения
+### Проверки
 
-`utils/expect.py` подписывает значение:
+Только обычный `assert` pytest. Действия выполняются до проверок, в каждом
+тесте одна проверяемая ситуация, после ассерта шагов нет. Сообщение в ассерте
+показывает фактическое состояние:
 
+```python
+actual = order_feed_page.wait_total_done_grows(baseline)
+assert actual > baseline, f"«Выполнено за всё время»: было {baseline}, стало {actual}"
 ```
-AssertionError: счётчик «Выполнено за всё время»: ожидалось > 4419, получено 4419
-```
-
-вместо голого `assert actual > baseline`.
 
 ### Allure
 
