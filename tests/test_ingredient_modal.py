@@ -1,8 +1,6 @@
 """Модальное окно «Детали ингредиента»."""
 import allure
 
-from utils.expect import expect
-
 MODAL_TITLE = "Детали ингредиента"
 
 
@@ -13,23 +11,25 @@ class TestIngredientModal:
     @allure.title("Клик по ингредиенту открывает модалку с деталями")
     def test_modal_opens(self, main_page):
         """В модалке есть заголовок и название выбранного ингредиента."""
-        main_page.open().wait_opened()
+        page = main_page.open().wait_opened()
 
-        name = main_page.open_ingredient_modal(0)
-        modal_text = main_page.modal_text()
+        name = page.open_ingredient_modal(0)
+        modal_text = page.modal_text()
 
-        expect(main_page.is_modal_opened(), "модалка").to_be_truthy()
-        expect(modal_text, "текст модалки").to_contain(MODAL_TITLE)
-        expect(name, "название ингредиента в карточке").to_be_truthy()
-        expect(modal_text, "текст модалки").to_contain(name)
+        assert page.is_modal_opened(), "модалка не открылась"
+        assert MODAL_TITLE in modal_text, (
+            f"в модалке нет заголовка {MODAL_TITLE!r}: {modal_text!r}"
+        )
+        assert name, "не удалось прочитать название ингредиента из карточки"
+        assert name in modal_text, (
+            f"в модалке нет ингредиента {name!r}: {modal_text!r}"
+        )
 
     @allure.title("Модалка закрывается кликом по крестику")
     def test_modal_closes_by_cross(self, main_page):
         """После клика по крестику окна на странице не остаётся."""
-        main_page.open().wait_opened()
-        main_page.open_ingredient_modal(0)
+        page = main_page.open().wait_opened()
+        page.open_ingredient_modal(0)
+        page.close_modal()
 
-        expect(main_page.is_modal_opened(), "модалка").to_be_truthy()
-        main_page.close_modal()
-        expect(main_page.is_modal_opened(), "модалка после закрытия") \
-            .to_equal(False)
+        assert not page.is_modal_opened(), "модалка осталась открытой"
